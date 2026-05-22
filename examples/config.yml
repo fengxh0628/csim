@@ -1,0 +1,121 @@
+constants:
+  startdate: 20260401
+  enddate: 20260519
+  booksize: 20
+  verbose: true
+  warmup: 5      # 5 days warmup before generating signals
+  rebalance_times: "00:00"  # UTC, 北京时间 08:00
+  datacache: /Users/fengxh/csimcache
+  mode: w        # w=write (load data), r=read-only (skip data loading)
+  interval: 5m   # bar interval: 1m, 5m, 15m, 1h
+
+universe:
+  symbols:
+    - BTCUSDT
+    - ETHUSDT
+    - BNBUSDT
+    - SOLUSDT
+    - XRPUSDT
+    - DOGEUSDT
+    - ADAUSDT
+    - AVAXUSDT
+    - LINKUSDT
+    - SUIUSDT
+
+modules:
+  # Data managers
+  - id: klines
+    path: modules/dmgrklines.py
+    datapath: /Users/fengxh/binance_data
+    handler: datahandler
+
+  # Stats
+  - id: statssimple
+    path: modules/statssimple.py
+    handler: statshandler
+
+  # Alpha modules
+  - id: alphamomentum
+    path: modules/alphamomentum.py
+    handler: alphahandler
+  - id: alphareversal
+    path: modules/alphareversal.py
+    handler: alphahandler
+  - id: alphavolume
+    path: modules/alphavolume.py
+    handler: alphahandler
+  - id: alphaintraday
+    path: modules/alphaintraday.py
+    handler: alphahandler
+  - id: combosimple
+    path: modules/combosimple.py
+    handler: alphahandler
+
+  # Operations
+  - id: opdecay
+    path: modules/opdecay.py
+    handler: ophandler
+  - id: opemadecay
+    path: modules/opemadecay.py
+    handler: ophandler
+  - id: opzscore
+    path: modules/opzscore.py
+    handler: ophandler
+  - id: oppower
+    path: modules/oppower.py
+    handler: ophandler
+  - id: opwinsorize
+    path: modules/opwinsorize.py
+    handler: ophandler
+  - id: optopn
+    path: modules/optopn.py
+    handler: ophandler
+  - id: opriskneut
+    path: modules/opriskneut.py
+    handler: ophandler
+  - id: riskfactors
+    path: modules/dmgrriskfactors.py
+    handler: datahandler
+    lookback: 20
+
+stats: { moduleId: statssimple, trading_cost: 0 }
+
+portfolio:
+  moduleId: combosimple
+  id: combo_main
+  operations:
+    - { moduleId: opwinsorize, sigma: 3.0 }
+    - { moduleId: opriskneut, factor: risk.beta, mode: 0 }
+    - { moduleId: oppower, exp: 1.0 }
+    - { moduleId: optopn, long_n: 5, short_n: 5 }
+  children:
+    - moduleId: alphamomentum
+      id: mom5d
+      lookback: 5d
+      weight: 1.0
+      operations:
+        - { moduleId: opemadecay, itvls: 15 }
+        - { moduleId: opzscore }
+    - moduleId: alphareversal
+      id: rev1d
+      lookback: 1d
+      weight: 1.0
+      operations:
+        - { moduleId: opemadecay, itvls: 15 }
+        - { moduleId: opzscore }
+    - moduleId: alphavolume
+      id: taker_ratio
+      signal: taker_ratio
+      lookback: 5d
+      weight: 0.5
+      operations:
+        - { moduleId: opemadecay, itvls: 15 }
+        - { moduleId: opzscore }
+    - moduleId: alphaintraday
+      id: close_loc
+      signal: close_loc
+      window: 1d
+      weight: 0.5
+      operations:
+        - { moduleId: opemadecay, itvls: 15 }
+        - { moduleId: opzscore }
