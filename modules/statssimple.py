@@ -26,7 +26,7 @@ class StatsSimple(StatsBase):
         # Hold period: auto-detect from rebalance config, or override manually
         self.hold_bars = int(cfg.get('hold_bars', self._get_hold_bars()))
         # Funding rate cost (optional, if funding data loaded)
-        self.funding = self.dr.getdata('funding.rate') if self.dr.has('funding.rate') else None
+        self.funding = self.dr.getdata('funding.rate') 
 
     def _get_hold_bars(self) -> int:
         """Infer hold_bars from rebalance_times config."""
@@ -76,10 +76,17 @@ class StatsSimple(StatsBase):
         if self.trading_cost > 0:
             pnl -= trade_val * self.trading_cost
 
-        if self.funding is not None:
-            # Sum funding rates over hold period (aligned to interval axis, 0 at non-settlement bars)
-            fwd_end = min(idx + self.hold_bars, self.funding.shape[0])
-            fr_sum = np.nansum(self.funding[idx:fwd_end, :], axis=0)
+        # Funding is charged every 8h. The 5m data has 96 bars per 8h interval.
+        # Take the average funding rate per 8h interval to avoid overcounting.
+        bars_per_8h = 8 * 60 // univbase.interval_minutes
+        fwd_end = min(idx + self.hold_bars, self.funding.shape[0])
+        fr_slice = self.funding[idx:fwd_end, :]
+        # Reshape to (n_periods, bars_per_8h, n_symbols) and average within each period
+        n_periods = fr_slice.shape[0] // bars_per_8h
+        if n_periods > 0:
+            fr_reshaped = fr_slice[:n_periods * bars_per_8h, :].reshape(n_periods, bars_per_8h, fr_slice.shape[1])
+            fr_avg = np.nanmean(fr_reshaped, axis=1)  # (n_periods, n_symbols)
+            fr_sum = np.nansum(fr_avg, axis=0)  # sum over 8h periods
             funding_cost = np.nansum(alpha * fr_sum)
             pnl -= funding_cost
 
@@ -89,7 +96,7 @@ class StatsSimple(StatsBase):
         long_val = np.nansum(np.where(alpha > 0, alpha, 0.0))
         short_val = np.nansum(np.where(alpha < 0, alpha, 0.0))
         hold_val = np.nansum(np.abs(alpha))
-        ret = pnl / long_val if long_val > 0 else 0.0
+        ret = pnl / (long_val - short_val) if (long_val - short_val) > 0 else 0.0
 
         # IC (rank correlation alpha vs forward return)
         valid_mask = np.isfinite(alpha) & np.isfinite(true_rets)

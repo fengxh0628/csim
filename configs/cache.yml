@@ -21,6 +21,11 @@ modules:
     datapath: /Users/fengxh/binance_data
     handler: datahandler
 
+  - id: fundingrate
+    path: modules/dmgrfundingrate.py
+    datapath: /Users/fengxh/binance_data
+    handler: datahandler
+
   - id: universe
     path: modules/dmgruniverse.py
     handler: datahandler
@@ -59,6 +64,9 @@ modules:
   - id: opzscore
     path: modules/opzscore.py
     handler: ophandler
+  - id: opprofitana
+    path: modules/opprofitana.py
+    handler: ophandler
   - id: oppower
     path: modules/oppower.py
     handler: ophandler
@@ -84,12 +92,6 @@ stats: { moduleId: statssimple, trading_cost: 0.001 }
 portfolio:
   moduleId: combosimple
   id: combo_main
-  operations:
-    - { moduleId: opwinsorize, sigma: 3.0 }
-    - { moduleId: opriskneut, factor: risk.beta, mode: 0 }
-    - { moduleId: oppower }
-    - { moduleId: optopn, long_n: 1, short_n: 1 }
-    - { moduleId: opdump, dumpdir: dumps }
   children:
     - moduleId: alphamomentum
       id: mom5d
@@ -121,3 +123,11 @@ portfolio:
       operations:
         - { moduleId: opemadecay, itvls: 15 }
         - { moduleId: oppower }
+  operations:
+    - { moduleId: opwinsorize, sigma: 3.0 }
+    - { moduleId: opriskneut, factor: risk.beta, mode: 0 }
+    - { moduleId: oppower }
+    - { moduleId: opprofitana, split: 5 }
+    - { moduleId: optopn, long_n: 10, short_n: 10 }
+    - { moduleId: opdump, dumpdir: dumps }
+ 
