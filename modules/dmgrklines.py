@@ -145,7 +145,19 @@ class DmgrKlines(DmgrBase):
 
     def _read_csv(self, path: str) -> pd.DataFrame:
         try:
-            df = pd.read_csv(path)
+            cols = ['open_time', 'open', 'high', 'low', 'close', 'volume',
+                    'close_time', 'quote_volume', 'count', 'taker_buy_volume',
+                    'taker_buy_quote_volume', 'ignore']
+            
+            # Check if file has header
+            with open(path, 'r') as f:
+                has_header = f.readline().startswith('open_time')
+            
+            if has_header:
+                df = pd.read_csv(path)
+            else:
+                df = pd.read_csv(path, header=None, names=cols)
+                
             df['open_time'] = pd.to_datetime(df['open_time'], unit='ms')
             for col in ['open', 'high', 'low', 'close', 'volume', 'quote_volume', 'count', 'taker_buy_volume']:
                 df[col] = pd.to_numeric(df[col], errors='coerce')

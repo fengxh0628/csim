@@ -6,7 +6,7 @@ Rebalance points (daily) are tracked separately.
 Persisted to datacache/__universe/:
   - instruments.mpk: list of symbol strings
   - dates.mpk: list of date ints (YYYYMMDD)
-  - intervals.mpk: total number of intervals
+  - cache_range.mpk: { startdate: int, enddate: int }
 """
 import os
 from datetime import date, timedelta, datetime
@@ -36,7 +36,6 @@ class Universe:
         self.interval_minutes: int = 0
         self._sym_idx: dict[str, int] = {}
         self._date_idx: dict[date, int] = {}
-        # rebalance_idx[di] = interval index for the start of day di
         self.rebalance_idx: np.ndarray = None
         self.initialize()
 
@@ -53,6 +52,7 @@ class Universe:
 
         instruments_path = os.path.join(univ_path, 'instruments.mpk')
         dates_path = os.path.join(univ_path, 'dates.mpk')
+        cache_range_path = os.path.join(univ_path, 'cache_range.mpk')
 
         # Load existing
         if os.path.exists(instruments_path):
@@ -64,19 +64,45 @@ class Universe:
                 dates_int = msgpack.unpackb(f.read(), raw=False)
             self.dates = [datetime.strptime(str(d), '%Y%m%d').date() for d in dates_int]
 
+        # Load cached date range
+        cached_start = None
+        cached_end = None
+        if os.path.exists(cache_range_path):
+            with open(cache_range_path, 'rb') as f:
+                cr = msgpack.unpackb(f.read(), raw=False)
+            cached_start = datetime.strptime(str(cr['startdate']), '%Y%m%d').date()
+            cached_end = datetime.strptime(str(cr['enddate']), '%Y%m%d').date()
+
         mode = simcfg.constants.get('mode', 'r')
         if mode != 'r':
+            cache_startdate = datetime.strptime(str(simcfg.constants['cache_startdate']), '%Y%m%d').date()
+            cache_enddate = datetime.strptime(str(simcfg.constants['cache_enddate']), '%Y%m%d').date()
+
+            if cached_start is not None:
+                if cache_startdate != cached_start:
+                    raise ValueError(
+                        f'cache_startdate mismatch: config={cache_startdate} '
+                        f'cache={cached_start}. Must match.'
+                    )
+                if cache_enddate < cached_end:
+                    raise ValueError(
+                        f'cache_enddate too early: config={cache_enddate} '
+                        f'cache={cached_end}. Must be >= cached enddate.'
+                    )
+                print(f'Cache date range verified: {cache_startdate} -> {cache_enddate} '
+                      f'(expanding from {cached_end})')
+            else:
+                print(f'New cache: {cache_startdate} -> {cache_enddate}')
+
             # Update symbols: list, file, or auto-discover from directory
             symbols_cfg = simcfg.universe.get('symbols', [])
             if isinstance(symbols_cfg, str):
                 if os.path.isdir(symbols_cfg):
-                    # Auto-discover: scan directory for symbol subdirectories
                     symbols_cfg = sorted([
                         d for d in os.listdir(symbols_cfg)
                         if os.path.isdir(os.path.join(symbols_cfg, d)) and d.endswith('USDT')
                     ])
                 else:
-                    # File with one symbol per line
                     with open(symbols_cfg, 'r') as f:
                         symbols_cfg = [line.strip() for line in f if line.strip()]
 
@@ -87,9 +113,9 @@ class Universe:
                 with open(instruments_path, 'wb') as f:
                     f.write(msgpack.packb(self.symbols))
 
-            # Update dates
-            start = datetime.strptime(str(simcfg.constants['startdate']), '%Y%m%d').date()
-            end = datetime.strptime(str(simcfg.constants['enddate']), '%Y%m%d').date()
+            # Update dates to cache_enddate
+            start = cache_startdate
+            end = cache_enddate
             all_dates = []
             d = start
             while d <= end:
@@ -105,11 +131,17 @@ class Universe:
                 with open(dates_path, 'wb') as f:
                     f.write(msgpack.packb(dates_int))
 
+            # Save cache range
+            with open(cache_range_path, 'wb') as f:
+                f.write(msgpack.packb({
+                    'startdate': int(cache_startdate.strftime('%Y%m%d')),
+                    'enddate': int(cache_enddate.strftime('%Y%m%d')),
+                }))
+
         self._sym_idx = {s: i for i, s in enumerate(self.symbols)}
         self._date_idx = {d: i for i, d in enumerate(self.dates)}
         self.n_intervals = len(self.dates) * self.bars_per_day
 
-        # Build rebalance index: rebalance_idx[di] = first interval of day di
         self.rebalance_idx = np.arange(len(self.dates)) * self.bars_per_day
 
     @property
@@ -130,15 +162,12 @@ class Universe:
         return d in self._date_idx
 
     def itvl_to_didx(self, itvl: int) -> int:
-        """Which day does this interval belong to?"""
         return itvl // self.bars_per_day
 
     def itvl_to_date(self, itvl: int) -> date:
-        """Convert interval index to calendar date."""
         return self.dates[self.itvl_to_didx(itvl)]
 
     def itvl_to_timestamp(self, itvl: int) -> str:
-        """Convert interval index to YYYYMMDDHHMMSS string."""
         di = itvl // self.bars_per_day
         bar_in_day = itvl % self.bars_per_day
         minutes = bar_in_day * self.interval_minutes
@@ -146,7 +175,6 @@ class Universe:
         return f'{self.dates[di].strftime("%Y%m%d")}{h:02d}{m:02d}00'
 
     def day_slice(self, di: int) -> slice:
-        """Return slice of interval indices for day di."""
         start = di * self.bars_per_day
         return slice(start, start + self.bars_per_day)
 

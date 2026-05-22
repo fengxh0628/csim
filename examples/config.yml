@@ -1,6 +1,8 @@
 constants:
   startdate: 20260401
   enddate: 20260519
+  cache_startdate: 20200101
+  cache_enddate: 20260731
   booksize: 20
   verbose: true
   warmup: 5      # 5 days warmup before generating signals
@@ -11,16 +13,151 @@ constants:
 
 universe:
   symbols:
-    - BTCUSDT
-    - ETHUSDT
-    - BNBUSDT
-    - SOLUSDT
-    - XRPUSDT
-    - DOGEUSDT
+    - 1000BONKUSDT
+    - 1000FLOKIUSDT
+    - 1000LUNCUSDT
+    - 1000PEPEUSDT
+    - 1000SATSUSDT
+    - 1000SHIBUSDT
+    - 1INCHUSDT
+    - AAVEUSDT
+    - ACTUSDT
     - ADAUSDT
+    - ALGOUSDT
+    - ALICEUSDT
+    - APEUSDT
+    - APTUSDT
+    - ARBUSDT
+    - ARPAUSDT
+    - ARUSDT
+    - ASTERUSDT
+    - ATOMUSDT
     - AVAXUSDT
+    - AVNTUSDT
+    - AXSUSDT
+    - BANDUSDT
+    - BCHUSDT
+    - BELUSDT
+    - BIGTIMEUSDT
+    - BLURUSDT
+    - BLZUSDT
+    - BNBUSDT
+    - BOMEUSDT
+    - BTCUSDT
+    - CELRUSDT
+    - CFXUSDT
+    - CHRUSDT
+    - CHZUSDT
+    - CLUSDT
+    - COAIUSDT
+    - COMPUSDT
+    - COTIUSDT
+    - CRVUSDT
+    - DASHUSDT
+    - DOGEUSDT
+    - DOTUSDT
+    - DUSKUSDT
+    - DYDXUSDT
+    - EGLDUSDT
+    - ENAUSDT
+    - ENJUSDT
+    - ENSUSDT
+    - ETCUSDT
+    - ETHFIUSDT
+    - ETHUSDT
+    - FARTCOINUSDT
+    - FETUSDT
+    - FILUSDT
+    - FTMUSDT
+    - GALAUSDT
+    - GASUSDT
+    - GMTUSDT
+    - GOATUSDT
+    - GRTUSDT
+    - GTCUSDT
+    - HBARUSDT
+    - HYPEUSDT
+    - IDUSDT
+    - INJUSDT
+    - IOTXUSDT
+    - IPUSDT
+    - JTOUSDT
+    - JUPUSDT
+    - KAITOUSDT
+    - KAVAUSDT
+    - KNCUSDT
+    - LDOUSDT
+    - LINAUSDT
     - LINKUSDT
+    - LITUSDT
+    - LRCUSDT
+    - LTCUSDT
+    - MANAUSDT
+    - MASKUSDT
+    - MEMEUSDT
+    - MKRUSDT
+    - MOODENGUSDT
+    - MOVEUSDT
+    - MTLUSDT
+    - MYXUSDT
+    - NEARUSDT
+    - NEIROUSDT
+    - NOTUSDT
+    - OCEANUSDT
+    - OGNUSDT
+    - OMUSDT
+    - ONDOUSDT
+    - ONEUSDT
+    - OPUSDT
+    - ORDIUSDT
+    - PAXGUSDT
+    - PENGUUSDT
+    - PEOPLEUSDT
+    - PIPPINUSDT
+    - PNUTUSDT
+    - POPCATUSDT
+    - PUMPUSDT
+    - RAVEUSDT
+    - RIVERUSDT
+    - RLCUSDT
+    - ROSEUSDT
+    - RSRUSDT
+    - RUNEUSDT
+    - SANDUSDT
+    - SEIUSDT
+    - SNXUSDT
+    - SOLUSDT
+    - STORJUSDT
+    - STXUSDT
     - SUIUSDT
+    - SUSHIUSDT
+    - SXPUSDT
+    - TAOUSDT
+    - THETAUSDT
+    - TIAUSDT
+    - TONUSDT
+    - TRBUSDT
+    - TRUMPUSDT
+    - TRXUSDT
+    - TURBOUSDT
+    - UNFIUSDT
+    - UNIUSDT
+    - VETUSDT
+    - VIRTUALUSDT
+    - WAVESUSDT
+    - WIFUSDT
+    - WLDUSDT
+    - WLFIUSDT
+    - XAGUSDT
+    - XAUUSDT
+    - XLMUSDT
+    - XMRUSDT
+    - XPLUSDT
+    - XRPUSDT
+    - XTZUSDT
+    - YFIUSDT
+    - ZECUSDT
+    - ZILUSDT
 
 modules:
   # Data managers
