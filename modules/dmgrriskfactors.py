@@ -28,7 +28,7 @@ class DmgrRiskFactors(DmgrBase):
                 break
 
     def dependencies(self) -> list[str]:
-        return ['itvl.close']
+        return ['close']
 
     def initialize(self):
         super().initialize()
@@ -38,7 +38,7 @@ class DmgrRiskFactors(DmgrBase):
         if self.mode == 'r':
             return
 
-        iclose = self.dr.getdata('itvl.close')
+        iclose = self.dr.getdata('close')
         beta = self.dr.getdata('risk.beta')
         bpd = univbase.bars_per_day
 

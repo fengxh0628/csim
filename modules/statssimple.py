@@ -16,9 +16,9 @@ class StatsSimple(StatsBase):
 
     def __init__(self, cfg: dict):
         super().__init__(cfg)
-        self.iclose = self.dr.getdata('itvl.close')
-        self.ivol = self.dr.getdata('itvl.volume')
-        self.iqvol = self.dr.getdata('itvl.quote_volume')
+        self.iclose = self.dr.getdata('close')
+        self.ivol = self.dr.getdata('volume')
+        self.iqvol = self.dr.getdata('quote_volume')
         self.trading_cost = float(cfg.get('trading_cost', 0.0005))
         # Execution window: bars after signal to compute entry/exit VWAP
         # Default exec_bars: 30 min worth of bars
