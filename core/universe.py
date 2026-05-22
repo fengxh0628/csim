@@ -75,8 +75,8 @@ class Universe:
 
         mode = simcfg.constants.get('mode', 'r')
         if mode != 'r':
-            cache_startdate = datetime.strptime(str(simcfg.constants['cache_startdate']), '%Y%m%d').date()
-            cache_enddate = datetime.strptime(str(simcfg.constants['cache_enddate']), '%Y%m%d').date()
+            cache_startdate = datetime.strptime(str(simcfg.universe['cache_startdate']), '%Y%m%d').date()
+            cache_enddate = datetime.strptime(str(simcfg.universe['cache_enddate']), '%Y%m%d').date()
 
             if cached_start is not None:
                 if cache_startdate != cached_start:

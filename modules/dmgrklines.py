@@ -22,8 +22,8 @@ from core.universe import univbase
 from core.sim_config import simcfg
 
 
-ITVL_FIELDS = ['itvl.open', 'itvl.high', 'itvl.low', 'itvl.close',
-               'itvl.volume', 'itvl.quote_volume', 'itvl.count', 'itvl.taker_buy_volume']
+ITVL_FIELDS = ['open', 'high', 'low', 'close',
+               'volume', 'quote_volume', 'count', 'taker_buy_volume']
 
 
 class DmgrKlines(DmgrBase):
@@ -74,14 +74,14 @@ class DmgrKlines(DmgrBase):
                 offset = di * bars_per_day
                 sl = slice(offset, offset + n_bars)
 
-                idata['itvl.open'][sl, si] = df['open'].values[:n_bars]
-                idata['itvl.high'][sl, si] = df['high'].values[:n_bars]
-                idata['itvl.low'][sl, si] = df['low'].values[:n_bars]
-                idata['itvl.close'][sl, si] = df['close'].values[:n_bars]
-                idata['itvl.volume'][sl, si] = df['volume'].values[:n_bars]
-                idata['itvl.quote_volume'][sl, si] = df['quote_volume'].values[:n_bars]
-                idata['itvl.count'][sl, si] = df['count'].values[:n_bars]
-                idata['itvl.taker_buy_volume'][sl, si] = df['taker_buy_volume'].values[:n_bars]
+                idata['open'][sl, si] = df['open'].values[:n_bars]
+                idata['high'][sl, si] = df['high'].values[:n_bars]
+                idata['low'][sl, si] = df['low'].values[:n_bars]
+                idata['close'][sl, si] = df['close'].values[:n_bars]
+                idata['volume'][sl, si] = df['volume'].values[:n_bars]
+                idata['quote_volume'][sl, si] = df['quote_volume'].values[:n_bars]
+                idata['count'][sl, si] = df['count'].values[:n_bars]
+                idata['taker_buy_volume'][sl, si] = df['taker_buy_volume'].values[:n_bars]
                 n_loaded += 1
 
             if (si + 1) % 10 == 0:
