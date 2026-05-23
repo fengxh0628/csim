@@ -19,7 +19,7 @@ class StatsSimple(StatsBase):
         self.iclose = self.dr.getdata('close')
         self.ivol = self.dr.getdata('volume')
         self.iqvol = self.dr.getdata('quote_volume')
-        self.trading_cost = float(cfg.get('trading_cost', 0.0005))
+        self.trading_cost = float(cfg.get('trading_cost', 0.))
         # Execution window: bars after signal to compute entry/exit VWAP
         # Default exec_bars: 30 min worth of bars
         self.exec_bars = int(cfg.get('exec_bars', 30 // univbase.interval_minutes))
@@ -96,11 +96,11 @@ class StatsSimple(StatsBase):
         long_val = np.nansum(np.where(alpha > 0, alpha, 0.0))
         short_val = np.nansum(np.where(alpha < 0, alpha, 0.0))
         hold_val = np.nansum(np.abs(alpha))
-        ret = pnl / (long_val - short_val) if (long_val - short_val) > 0 else 0.0
+        ret = pnl / hold_val if hold_val > 0 else 0.0
 
         # IC (rank correlation alpha vs forward return)
         valid_mask = np.isfinite(alpha) & np.isfinite(true_rets)
-        if valid_mask.sum() >= 5:
+        if valid_mask.sum() >= 3:
             ic = spearmanr(alpha[valid_mask], true_rets[valid_mask])[0]
         else:
             ic = np.nan
