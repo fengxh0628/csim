@@ -2,9 +2,13 @@
 
 Computes rolling factor exposures for each symbol. Currently:
   - beta: rolling beta to BTC
+  - adv15: 15-day average daily quote volume
+  - logadv15: log of adv15
 
 Registered fields:
   risk.beta   (n_dates, n_symbols) float32
+  risk.adv15  (n_dates, n_symbols) float32
+  risk.logadv15  (n_dates, n_symbols) float32
 
 Future factors can be added here (e.g., size, volatility, momentum factor).
 """
@@ -28,11 +32,11 @@ class DmgrRiskFactors(DmgrBase):
                 break
 
     def dependencies(self) -> list[str]:
-        return ['close']
+        return ['close', 'itvl.quote_volume']
 
     def initialize(self):
         super().initialize()
-        self.add_itvl_data(['risk.beta'])
+        self.add_itvl_data(['risk.beta', 'risk.adv15', 'risk.logadv15'])
 
     def load_data(self):
         if self.mode == 'r':

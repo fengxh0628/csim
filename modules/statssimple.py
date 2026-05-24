@@ -71,8 +71,10 @@ class StatsSimple(StatsBase):
         pnl = np.nansum(alpha * true_rets)
 
         # Transaction costs and funding
-        delta = alpha - prevalpha
-        trade_val = np.nansum(np.abs(delta))
+        # delta = alpha - prevalpha: fill NaN→0 so entering/exiting positions count
+        a = np.where(np.isfinite(alpha), alpha, 0.0)
+        p = np.where(np.isfinite(prevalpha), prevalpha, 0.0)
+        trade_val = np.nansum(np.abs(a - p))
         if self.trading_cost > 0:
             pnl -= trade_val * self.trading_cost
 

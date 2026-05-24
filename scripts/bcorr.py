@@ -63,7 +63,7 @@ def main():
     parser = ArgumentParser()
     parser.add_argument('base', help='Base PnL file')
     parser.add_argument('target', help='Target PnL file or directory')
-    parser.add_argument('-d', '--days', type=int, default=500)
+    parser.add_argument('-d', '--days', type=int, default=365 * 2)
     parser.add_argument('-j', '--jobs', type=int, default=8)
     args = parser.parse_args()
 

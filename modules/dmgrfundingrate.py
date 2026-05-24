@@ -77,7 +77,20 @@ class DmgrFunding(DmgrBase):
                 if not fname.endswith('.csv'):
                     continue
 
-                if since is not None and subdir == 'daily':
+                if since is not None and subdir == 'monthly':
+                    try:
+                        parts = fname.replace('.csv', '').split('-')
+                        y, m = int(parts[-2]), int(parts[-1])
+                        from datetime import timedelta
+                        if m == 12:
+                            month_end = date(y + 1, 1, 1) - timedelta(days=1)
+                        else:
+                            month_end = date(y, m + 1, 1) - timedelta(days=1)
+                        if month_end < since:
+                            continue
+                    except (ValueError, IndexError):
+                        pass
+                elif since is not None and subdir == 'daily':
                     try:
                         parts = fname.replace('.csv', '').split('-')
                         file_date = date(int(parts[-3]), int(parts[-2]), int(parts[-1]))
@@ -87,16 +100,31 @@ class DmgrFunding(DmgrBase):
                         pass
 
                 fpath = os.path.join(sym_dir, fname)
-                try:
-                    df = pd.read_csv(fpath)
-                    df['open_time'] = pd.to_datetime(df['open_time'], unit='ms')
-                    df['close'] = pd.to_numeric(df['close'], errors='coerce')
-                    for d, day_df in df.groupby(df['open_time'].dt.date):
-                        if univbase.has_date(d) and (since is None or d >= since):
-                            result[d] = day_df.reset_index(drop=True)
-                except Exception:
+                df = self._read_csv(fpath)
+                if df is None or df.empty:
                     continue
+                for d, day_df in df.groupby(df['open_time'].dt.date):
+                    if univbase.has_date(d) and (since is None or d >= since):
+                        result[d] = day_df.reset_index(drop=True)
         return result
+
+    def _read_csv(self, path: str) -> pd.DataFrame:
+        cols = ['open_time', 'open', 'high', 'low', 'close', 'volume',
+                'close_time', 'quote_volume', 'count', 'taker_buy_volume',
+                'taker_buy_quote_volume', 'ignore']
+        try:
+            with open(path, 'r') as f:
+                has_header = f.readline().startswith('open_time')
+            if has_header:
+                df = pd.read_csv(path)
+            else:
+                df = pd.read_csv(path, header=None, names=cols)
+            df['open_time'] = pd.to_datetime(df['open_time'], unit='ms')
+            df['close'] = pd.to_numeric(df['close'], errors='coerce')
+            return df
+        except Exception as e:
+            print(f'  WARNING: {path}: {e}')
+            return None
 
 
 def create(cfg: dict) -> DmgrFunding:
