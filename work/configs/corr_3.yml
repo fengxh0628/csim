@@ -1,0 +1,90 @@
+constants:
+  startdate: 20210101
+  enddate: 20231231
+  booksize: 20
+  verbose: true
+  warmup: 5      # 5 days warmup before generating signals
+  rebalance_times: "00:00"  # UTC, 北京时间 08:00
+  datacache: /Users/fengxh/csimcache
+  mode: w        # w=write (load data), r=read-only (skip data loading)
+  interval: 5m   # bar interval: 1m, 5m, 15m, 1h
+
+universe:
+  symbols: /Users/fengxh/csim/data/universe_top50_liquid.txt
+  cache_startdate: 20200101
+  cache_enddate: 20260731
+
+modules:
+  # Data managers
+  - id: klines
+    path: /Users/fengxh/csim/modules/dmgrklines.py
+    datapath: /Users/fengxh/binance_data
+    handler: datahandler
+
+  - id: fundingrate
+    path: /Users/fengxh/csim/modules/dmgrfundingrate.py
+    datapath: /Users/fengxh/binance_data
+    handler: datahandler
+
+  - id: universe
+    path: /Users/fengxh/csim/modules/dmgruniverse.py
+    handler: datahandler
+    top_n: 50
+    lookback_months: 12
+
+  # Stats
+  - id: statssimple
+    path: /Users/fengxh/csim/modules/statssimple.py
+    handler: statshandler
+
+  # Alpha modules
+  - id: corr
+    path: /Users/fengxh/csim/work/code/corr.py
+    handler: alphahandler
+
+  # Operations
+  - id: opdecay
+    path: /Users/fengxh/csim/modules/opdecay.py
+    handler: ophandler
+  - id: opemadecay
+    path: /Users/fengxh/csim/modules/opemadecay.py
+    handler: ophandler
+  - id: opzscore
+    path: /Users/fengxh/csim/modules/opzscore.py
+    handler: ophandler
+  - id: opprofitana
+    path: /Users/fengxh/csim/modules/opprofitana.py
+    handler: ophandler
+  - id: oppower
+    path: /Users/fengxh/csim/modules/oppower.py
+    handler: ophandler
+  - id: opdump
+    path: /Users/fengxh/csim/modules/opdump.py
+    handler: ophandler
+  - id: opwinsorize
+    path: /Users/fengxh/csim/modules/opwinsorize.py
+    handler: ophandler
+  - id: optopn
+    path: /Users/fengxh/csim/modules/optopn.py
+    handler: ophandler
+  - id: opriskneut
+    path: /Users/fengxh/csim/modules/opriskneut.py
+    handler: ophandler
+  - id: riskfactors
+    path: /Users/fengxh/csim/modules/dmgrriskfactors.py
+    handler: datahandler
+    lookback: 20
+
+stats: { moduleId: statssimple }
+
+portfolio:
+  moduleId: corr
+  id: corr_3
+  lookback: 3d
+  data1: high
+  data2: open
+  operations:
+    - { moduleId: opwinsorize }
+    - { moduleId: opemadecay, itvls: 8 }
+    - { moduleId: oppower }
+    - { moduleId: opprofitana, split: 5, startdate: 20210101 }
