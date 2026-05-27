@@ -85,6 +85,6 @@ portfolio:
   operations:
     - { moduleId: opriskneut, factor: risk.beta }
     - { moduleId: opwinsorize }
-    - { moduleId: opemadecay, itvls: 10 }
+    - { moduleId: opemadecay, itvls: 10d }
     - { moduleId: oppower }
     - { moduleId: opprofitana, split: 5, startdate: 20210101 }

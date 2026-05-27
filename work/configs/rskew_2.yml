@@ -86,6 +86,6 @@ portfolio:
   direction: -1
   operations:
     - { moduleId: opwinsorize }
-    - { moduleId: opemadecay, itvls: 3 }
+    - { moduleId: opemadecay, itvls: 3d }
     - { moduleId: oppower }
     - { moduleId: opprofitana, split: 5, startdate: 20210101 }

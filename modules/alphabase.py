@@ -12,6 +12,7 @@ class AlphaBase:
         self.dr = get_data_registry()
         self.alpha = np.full(univbase.n_symbols, np.nan, dtype=np.float32)
         self.children = []
+        self.delay = int(cfg.get('delay', 1))
         # Tradeable mask (optional, from dmgrfilter or dmgruniverse)
         if self.dr.has('universe_mask'):
             self._tradeable = self.dr.getdata('universe_mask')

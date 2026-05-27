@@ -103,7 +103,7 @@ portfolio:
       data2: volume
       direction: -1
       operations:
-        - { moduleId: opemadecay, itvls: 6 }
+        - { moduleId: opemadecay, itvls: 6d }
         - { moduleId: oppower }
         - { moduleId: opprofitana, split: 5, startdate: 20210101 }
     - moduleId: corr
@@ -113,7 +113,7 @@ portfolio:
       data2: low
       operations:
         - { moduleId: opwinsorize }
-        - { moduleId: opemadecay, itvls: 8 }
+        - { moduleId: opemadecay, itvls: 8d }
         - { moduleId: oppower }
         - { moduleId: opprofitana, split: 5, startdate: 20210101 }
     - moduleId: mstd
@@ -122,14 +122,14 @@ portfolio:
       operations:
         - { moduleId: opwinsorize }
         - { moduleId: opriskneut, factor: risk.beta }
-        # - { moduleId: opemadecay, itvls: 2 }
+        # - { moduleId: opemadecay, itvls: 2d }
         - { moduleId: oppower }
         - { moduleId: opprofitana, split: 5, startdate: 20210101 }
     - moduleId: rskew
       id: rskew
       operations:
         - { moduleId: opwinsorize }
-        - { moduleId: opdecay, itvls: 3 }
+        - { moduleId: opdecay, itvls: 3d }
         - { moduleId: oppower }
         - { moduleId: opprofitana, split: 5, startdate: 20210101 }
     - moduleId: rskew
@@ -140,7 +140,7 @@ portfolio:
       direction: -1
       operations:
         - { moduleId: opwinsorize }
-        - { moduleId: opemadecay, itvls: 3 }
+        - { moduleId: opemadecay, itvls: 3d }
         - { moduleId: oppower }
         - { moduleId: opprofitana, split: 5, startdate: 20210101 }
     - moduleId: rsud
@@ -149,7 +149,7 @@ portfolio:
       operations:
         - { moduleId: opwinsorize }
         - { moduleId: opriskneut, factor: risk.beta }
-        - { moduleId: opemadecay, itvls: 8 }
+        - { moduleId: opemadecay, itvls: 8d }
         - { moduleId: oppower }
         - { moduleId: opprofitana, split: 5, startdate: 20210101 }
     - moduleId: skew
@@ -157,7 +157,7 @@ portfolio:
       direction: -1
       operations:
         - { moduleId: opwinsorize }
-        - { moduleId: opemadecay, itvls: 10 }
+        - { moduleId: opemadecay, itvls: 10d }
         - { moduleId: oppower }
         - { moduleId: opprofitana, split: 5, startdate: 20210101 }
     - moduleId: corr
@@ -167,7 +167,7 @@ portfolio:
       data2: volume
       direction: -1
       operations:
-        - { moduleId: opemadecay, itvls: 6 }
+        - { moduleId: opemadecay, itvls: 6d }
         - { moduleId: oppower }
         - { moduleId: opprofitana, split: 5, startdate: 20210101 }
   operations:

@@ -16,13 +16,14 @@ class AlphaVolatility(AlphaBase):
         self.iclose = self.dr.getdata('itvl.close')
 
     def generate(self, idx: int) -> None:
-        if idx < self.long_bars:
+        didx = idx - self.delay
+        if didx < self.long_bars:
             return
 
         bpd = univbase.bars_per_day
 
         # Sample daily close for vol computation
-        close_long = self.iclose[idx - self.long_bars:idx + 1:bpd, :]
+        close_long = self.iclose[didx - self.long_bars:didx + 1:bpd, :]
         if close_long.shape[0] < 5:
             return
         rets_long = close_long[1:, :] / close_long[:-1, :] - 1.0

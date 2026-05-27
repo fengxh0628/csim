@@ -85,6 +85,6 @@ portfolio:
   data2: volume
   direction: -1
   operations:
-    - { moduleId: opemadecay, itvls: 6 }
+    - { moduleId: opemadecay, itvls: 6d }
     - { moduleId: oppower }
     - { moduleId: opprofitana, split: 5, startdate: 20210101 }

@@ -17,7 +17,8 @@ class AlphaFunding(AlphaBase):
         self.funding = self.dr.getdata('funding.rate')
 
     def generate(self, idx: int) -> None:
-        di = univbase.itvl_to_didx(idx)
+        didx = idx - self.delay
+        di = univbase.itvl_to_didx(didx)
         if di < self.lookback:
             return
         # Average funding rate over lookback days

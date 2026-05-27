@@ -14,12 +14,13 @@ class AlphaAutocorr(AlphaBase):
         self.iclose = self.dr.getdata('itvl.close')
 
     def generate(self, idx: int) -> None:
+        didx = idx - self.delay
         bpd = univbase.bars_per_day
-        if idx < self.lookback_bars + bpd:
+        if didx < self.lookback_bars + bpd:
             return
 
         # Daily returns over lookback
-        close_daily = self.iclose[idx - self.lookback_bars:idx + 1:bpd, :]
+        close_daily = self.iclose[didx - self.lookback_bars:didx + 1:bpd, :]
         rets = close_daily[1:, :] / close_daily[:-1, :] - 1.0
 
         for si in range(univbase.n_symbols):

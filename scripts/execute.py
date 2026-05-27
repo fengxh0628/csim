@@ -2,21 +2,25 @@
 """Execute target positions on Binance USDT-M perpetual futures.
 
 Usage:
-  python execute.py --positions positions/20260522.json
-  python execute.py --positions positions/20260522.json --dry-run
-  python execute.py --positions positions/20260522.json --max-notional 10000
+  python execute.py --positions signal.csv
+  python execute.py --positions signal.csv --dry-run
+  python execute.py --positions signal.csv --max-notional 2500
+
+Supports CSV format (opdump output).
 
 Workflow:
-  1. Read target positions (from daily.py output)
-  2. Query current positions from Binance
-  3. Compute delta (target - current)
-  4. Execute: limit orders → wait → cancel unfilled → market sweep
-  5. Log execution results
+  1. Read target positions (CSV)
+  2. Normalize weights: long side = 0.5, short side = -0.5
+  3. Query current positions from Binance
+  4. Compute delta (target - current)
+  5. Execute: limit orders in parallel -> wait -> cancel unfilled -> market sweep
+  6. Log execution results
 
 Requires: pip install python-binance
 Environment variables: BINANCE_API_KEY, BINANCE_API_SECRET
 """
 import argparse
+import csv
 import json
 import os
 import sys
@@ -116,78 +120,11 @@ class Executor:
 
         return deltas
 
-    def execute_order(self, symbol: str, side: str, qty: float,
-                      limit_price: float, timeout_seconds: int = 60) -> dict:
-        """Place limit order, wait, cancel if unfilled, sweep with market."""
-        info = self.get_symbol_info(symbol)
-        if info is None:
-            return {'symbol': symbol, 'status': 'error', 'msg': 'symbol not found'}
-
-        qty = self.round_qty(abs(qty), info['stepSize'])
-        if qty < info['minQty']:
-            return {'symbol': symbol, 'status': 'skipped', 'msg': f'qty {qty} < minQty {info["minQty"]}'}
-
-        limit_price = self.round_price(limit_price, info['tickSize'])
-
-        if self.dry_run:
-            return {'symbol': symbol, 'side': side, 'qty': qty,
-                    'price': limit_price, 'status': 'dry_run'}
-
-        # Place limit order
-        try:
-            order = self.client.futures_create_order(
-                symbol=symbol,
-                side=side,
-                type='LIMIT',
-                timeInForce='GTC',
-                quantity=qty,
-                price=str(limit_price),
-            )
-        except Exception as e:
-            return {'symbol': symbol, 'status': 'error', 'msg': str(e)}
-
-        order_id = order['orderId']
-
-        # Wait for fill
-        filled_qty = 0.0
-        start = time.time()
-        while time.time() - start < timeout_seconds:
-            time.sleep(5)
-            status = self.client.futures_get_order(symbol=symbol, orderId=order_id)
-            filled_qty = float(status['executedQty'])
-            if status['status'] in ('FILLED', 'CANCELED', 'EXPIRED'):
-                break
-
-        # Cancel if not fully filled
-        remaining = qty - filled_qty
-        if remaining > info['minQty'] and status['status'] not in ('FILLED', 'CANCELED', 'EXPIRED'):
-            try:
-                self.client.futures_cancel_order(symbol=symbol, orderId=order_id)
-            except Exception:
-                pass
-
-            # Market sweep remainder
-            remaining = self.round_qty(remaining, info['stepSize'])
-            if remaining >= info['minQty']:
-                try:
-                    self.client.futures_create_order(
-                        symbol=symbol,
-                        side=side,
-                        type='MARKET',
-                        quantity=remaining,
-                    )
-                    filled_qty = qty
-                except Exception as e:
-                    return {'symbol': symbol, 'status': 'partial', 'filled': filled_qty,
-                            'remaining': remaining, 'msg': str(e)}
-
-        return {'symbol': symbol, 'side': side, 'qty': qty,
-                'filled': filled_qty, 'price': limit_price, 'status': 'filled'}
-
     def execute(self, target_positions: dict[str, float], max_notional: float,
-                limit_offset_bps: float = 2.0, timeout_seconds: int = 60):
+                limit_offset_bps: float = 2.0, timeout_seconds: int = 600):
         """Execute full rebalance.
 
+        All limit orders placed in parallel, then wait once, then sweep unfilled.
         limit_offset_bps: offset from mark price for limit orders (maker)
         """
         print(f'[execute] Target: {len(target_positions)} positions, notional=${max_notional:.0f}')
@@ -208,33 +145,94 @@ class Executor:
 
         print(f'[execute] Deltas: {len(deltas)} orders to place')
 
-        # Sort: close positions first (reduce risk), then open
-        # Closing = reducing abs position, opening = increasing
-        close_orders = []
-        open_orders = []
-        for sym, delta in deltas.items():
-            current_amt = current.get(sym, 0.0)
-            if abs(current_amt + delta) < abs(current_amt):
-                close_orders.append((sym, delta))
-            else:
-                open_orders.append((sym, delta))
+        if not deltas:
+            return []
 
-        # Execute
+        # Phase 1: Place all limit orders in parallel
+        pending_orders = []
         results = []
-        for sym, delta in close_orders + open_orders:
+
+        for sym, delta in deltas.items():
             side = 'BUY' if delta > 0 else 'SELL'
             price = prices[sym]
-            # Offset for maker: buy slightly below, sell slightly above
             offset = price * limit_offset_bps / 10000
             limit_price = price - offset if side == 'BUY' else price + offset
 
-            notional = abs(delta * price)
-            print(f'  {sym:12} {side:4} qty={abs(delta):.4f} ~${notional:.0f} @ {limit_price:.4f}')
+            info = self.get_symbol_info(sym)
+            if info is None:
+                results.append({'symbol': sym, 'status': 'error', 'msg': 'symbol not found'})
+                continue
 
-            result = self.execute_order(sym, side, delta, limit_price, timeout_seconds)
-            results.append(result)
-            self.log_entries.append(result)
+            qty = self.round_qty(abs(delta), info['stepSize'])
+            if qty < info['minQty']:
+                results.append({'symbol': sym, 'status': 'skipped', 'msg': f'qty {qty} < minQty {info["minQty"]}'})
+                continue
 
+            limit_price = self.round_price(limit_price, info['tickSize'])
+            notional = qty * price
+            print(f'  {sym:12} {side:4} qty={qty:.4f} ~${notional:.0f} @ {limit_price:.4f}')
+
+            if self.dry_run:
+                results.append({'symbol': sym, 'side': side, 'qty': qty,
+                                'price': limit_price, 'status': 'dry_run'})
+                continue
+
+            try:
+                order = self.client.futures_create_order(
+                    symbol=sym, side=side, type='LIMIT',
+                    timeInForce='GTC', quantity=qty, price=str(limit_price),
+                )
+                pending_orders.append((sym, order['orderId'], qty, side, info))
+            except Exception as e:
+                results.append({'symbol': sym, 'status': 'error', 'msg': str(e)})
+
+        if self.dry_run or not pending_orders:
+            self.log_entries.extend(results)
+            return results
+
+        # Phase 2: Wait for fills
+        print(f'\n[execute] Waiting {timeout_seconds}s for {len(pending_orders)} limit orders...')
+        time.sleep(timeout_seconds)
+
+        # Phase 3: Check fills, cancel unfilled, market sweep
+        for sym, order_id, qty, side, info in pending_orders:
+            try:
+                status = self.client.futures_get_order(symbol=sym, orderId=order_id)
+            except Exception as e:
+                results.append({'symbol': sym, 'status': 'error', 'msg': str(e)})
+                continue
+
+            filled_qty = float(status['executedQty'])
+
+            if status['status'] == 'FILLED':
+                results.append({'symbol': sym, 'side': side, 'qty': qty,
+                                'filled': filled_qty, 'status': 'filled'})
+                continue
+
+            # Cancel unfilled/partial
+            if status['status'] not in ('CANCELED', 'EXPIRED'):
+                try:
+                    self.client.futures_cancel_order(symbol=sym, orderId=order_id)
+                except Exception:
+                    pass
+
+            # Market sweep remainder
+            remaining = self.round_qty(qty - filled_qty, info['stepSize'])
+            if remaining >= info['minQty']:
+                try:
+                    self.client.futures_create_order(
+                        symbol=sym, side=side, type='MARKET', quantity=remaining,
+                    )
+                    filled_qty = qty
+                except Exception as e:
+                    results.append({'symbol': sym, 'side': side, 'status': 'partial',
+                                    'filled': filled_qty, 'remaining': remaining, 'msg': str(e)})
+                    continue
+
+            results.append({'symbol': sym, 'side': side, 'qty': qty,
+                            'filled': filled_qty, 'status': 'filled'})
+
+        self.log_entries.extend(results)
         return results
 
     def save_log(self, log_dir: str):
@@ -247,21 +245,52 @@ class Executor:
         print(f'[execute] Log saved: {log_file}')
 
 
+def load_positions(path: str) -> dict[str, float]:
+    """Load positions from CSV file and normalize weights.
+
+    CSV format (opdump): header ',alpha', rows 'SYMBOL,value'
+
+    Returns normalized weights: long side sums to 0.5, short side to -0.5.
+    """
+    raw = {}
+    with open(path) as f:
+        reader = csv.reader(f)
+        header = next(reader)
+        for row in reader:
+            if len(row) >= 2 and row[0].strip():
+                sym = row[0].strip()
+                val = float(row[1])
+                raw[sym] = val
+
+    long_scores = {sym: v for sym, v in raw.items() if v > 0}
+    short_scores = {sym: v for sym, v in raw.items() if v < 0}
+
+    long_sum = sum(long_scores.values())
+    short_sum = sum(abs(v) for v in short_scores.values())
+
+    weights = {}
+    if long_sum > 0:
+        for sym, v in long_scores.items():
+            weights[sym] = 0.5 * v / long_sum
+    if short_sum > 0:
+        for sym, v in short_scores.items():
+            weights[sym] = -0.5 * abs(v) / short_sum
+
+    return weights
+
+
 def main():
     parser = argparse.ArgumentParser(description='Execute target positions on Binance')
-    parser.add_argument('--positions', required=True, help='Path to positions JSON file')
+    parser.add_argument('--positions', required=True, help='Path to positions file (CSV)')
     parser.add_argument('--max-notional', type=float, default=0, help='Total notional in USDT (0=use account balance)')
     parser.add_argument('--dry-run', action='store_true', help='Print orders without executing')
-    parser.add_argument('--timeout', type=int, default=60, help='Seconds to wait for limit fill')
+    parser.add_argument('--timeout', type=int, default=600, help='Seconds to wait for limit fill (default 10min)')
     parser.add_argument('--offset-bps', type=float, default=2.0, help='Limit order offset from mark price (bps)')
+    parser.add_argument('--leverage', type=int, default=3, help='Leverage to set for all symbols (default 3)')
     args = parser.parse_args()
 
-    # Load target positions
-    with open(args.positions) as f:
-        data = json.load(f)
-    target = data['positions']
+    target = load_positions(args.positions)
 
-    # API credentials
     api_key = os.environ.get('BINANCE_API_KEY', '')
     api_secret = os.environ.get('BINANCE_API_SECRET', '')
     if not api_key or not api_secret:
@@ -272,14 +301,21 @@ def main():
 
     executor = Executor(api_key, api_secret, dry_run=args.dry_run)
 
-    # Determine notional
     max_notional = args.max_notional
     if max_notional <= 0 and not args.dry_run:
-        executor.get_current_positions()  # triggers account fetch
+        executor.get_current_positions()
         max_notional = executor.get_account_balance()
         print(f'[execute] Account balance: ${max_notional:.2f}')
     elif max_notional <= 0:
-        max_notional = 10000  # default for dry run
+        max_notional = 10000
+
+    if not args.dry_run:
+        for sym in target.keys():
+            try:
+                executor.client.futures_change_leverage(symbol=sym, leverage=args.leverage)
+            except Exception:
+                pass
+        print(f'[execute] Leverage set to {args.leverage}x')
 
     print(f'=== Execute: {args.positions} ({"DRY RUN" if args.dry_run else "LIVE"}) ===')
     results = executor.execute(
@@ -289,13 +325,11 @@ def main():
         timeout_seconds=args.timeout,
     )
 
-    # Summary
     filled = sum(1 for r in results if r.get('status') == 'filled')
     skipped = sum(1 for r in results if r.get('status') == 'skipped')
     errors = sum(1 for r in results if r.get('status') == 'error')
     print(f'\n[execute] Done: {filled} filled, {skipped} skipped, {errors} errors')
 
-    # Save log
     csim_root = Path(__file__).resolve().parent.parent
     executor.save_log(str(csim_root / 'logs'))
 

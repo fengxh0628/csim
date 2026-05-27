@@ -16,9 +16,10 @@ class AlphaVolClock(AlphaBase):
         self.iclose = self.dr.getdata('itvl.close')
 
     def generate(self, idx: int) -> None:
+        didx = idx - self.delay
         bpd = univbase.bars_per_day
         total_bars = (self.lookback_days + 1) * bpd
-        if idx < total_bars:
+        if didx < total_bars:
             return
 
         bucket_size = bpd // self.n_buckets
@@ -26,7 +27,7 @@ class AlphaVolClock(AlphaBase):
         # Today's volume distribution
         today_vol = np.zeros((self.n_buckets, univbase.n_symbols), dtype=np.float32)
         for b in range(self.n_buckets):
-            start = idx - bpd + b * bucket_size
+            start = didx - bpd + b * bucket_size
             end = start + bucket_size
             today_vol[b, :] = np.nansum(self.ivol[start:end, :], axis=0)
 
@@ -42,7 +43,7 @@ class AlphaVolClock(AlphaBase):
         hist_vol = np.zeros((self.n_buckets, univbase.n_symbols), dtype=np.float32)
         for d in range(1, self.lookback_days + 1):
             for b in range(self.n_buckets):
-                start = idx - (d + 1) * bpd + b * bucket_size
+                start = didx - (d + 1) * bpd + b * bucket_size
                 end = start + bucket_size
                 hist_vol[b, :] += np.nansum(self.ivol[start:end, :], axis=0)
 
@@ -53,8 +54,8 @@ class AlphaVolClock(AlphaBase):
 
         last_bucket_excess = today_pct[-1, :] - hist_pct[-1, :]
 
-        cur = self.iclose[idx, :]
-        prev = self.iclose[idx - bpd, :]
+        cur = self.iclose[didx, :]
+        prev = self.iclose[didx - bpd, :]
         direction = np.where((cur > 0) & (prev > 0), np.sign(cur / prev - 1.0), 0.0)
 
         self.alpha[v] = last_bucket_excess[v] * direction[v]

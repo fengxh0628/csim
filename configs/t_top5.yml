@@ -89,7 +89,7 @@ portfolio:
   lookback: 5d
   operations:
     - moduleId: opdecay
-      itvls: 15
+      itvls: 15d
     - moduleId: oppower
     - moduleId: optopn
       long_n: 5

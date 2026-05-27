@@ -16,13 +16,14 @@ class AlphaVwapDev(AlphaBase):
         self.iqvol = self.dr.getdata('itvl.quote_volume')
 
     def generate(self, idx: int) -> None:
-        if idx < self.lookback_bars:
+        didx = idx - self.delay
+        if didx < self.lookback_bars:
             return
 
-        sl = slice(idx - self.lookback_bars, idx)
+        sl = slice(didx - self.lookback_bars, didx)
         total_qvol = np.nansum(self.iqvol[sl, :], axis=0)
         total_vol = np.nansum(self.ivol[sl, :], axis=0)
-        close = self.iclose[idx, :]
+        close = self.iclose[didx, :]
 
         valid = (total_vol > 0) & np.isfinite(close) & (close > 0)
         vwap = np.full(univbase.n_symbols, np.nan, dtype=np.float32)

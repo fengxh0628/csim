@@ -85,6 +85,6 @@ portfolio:
   data2: low
   operations:
     - { moduleId: opwinsorize }
-    - { moduleId: opemadecay, itvls: 8 }
+    - { moduleId: opemadecay, itvls: 8d }
     - { moduleId: oppower }
     - { moduleId: opprofitana, split: 5, startdate: 20210101 }

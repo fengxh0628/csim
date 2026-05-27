@@ -18,10 +18,11 @@ class AlphaIntraday(AlphaBase):
         self.ilow = self.dr.getdata('low')
 
     def generate(self, idx: int) -> None:
-        if idx < self.window_bars:
+        didx = idx - self.delay
+        if didx < self.window_bars:
             return
 
-        sl = slice(idx - self.window_bars, idx)
+        sl = slice(didx - self.window_bars, didx)
         half = self.window_bars // 2
 
         if self.signal_type == 'intraday_vol_ratio':
