@@ -1,5 +1,5 @@
 constants:
-  datacache: /Users/fengxh/csimcache
+  datacache: /home/fengxh/csimcache
   startdate: 20210101
   enddate: 20260519
   booksize: 20
@@ -17,11 +17,11 @@ universe:
 modules:
   - id: klines
     path: modules/dmgrklines.py
-    datapath: /Users/fengxh/binance_data
+    datapath: /home/fengxh/binance_data
     handler: datahandler
   - id: fundingrate
     path: modules/dmgrfundingrate.py
-    datapath: /Users/fengxh/binance_data
+    datapath: /home/fengxh/binance_data
     handler: datahandler
   - id: universe
     path: modules/dmgruniverse.py

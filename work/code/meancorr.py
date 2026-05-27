@@ -16,9 +16,10 @@ class AlphaTest(AlphaBase):
         self.direction = int(cfg.get('direction', 1))
 
     def generate(self, idx: int) -> None:
+        didx = idx - self.delay
         valid = self.get_valid(idx)
-        start_idx = idx + 1 - self.itvls
-        end_idx = idx + 1
+        start_idx = didx + 1 - self.itvls
+        end_idx = didx + 1
 
         data = self.data[start_idx:end_idx, valid]
         data = data[1:] / data[:-1] - 1.

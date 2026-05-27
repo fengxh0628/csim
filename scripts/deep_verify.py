@@ -10,7 +10,7 @@ from datetime import datetime
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 def main():
-    cache_dir = '/Users/fengxh/csimcache/5m'
+    cache_dir = '/home/fengxh/csimcache/5m'
     univ_path = os.path.join(cache_dir, '__universe')
     universe_dir = os.path.join(cache_dir, 'universe')
     klines_dir = os.path.join(cache_dir, 'klines')
