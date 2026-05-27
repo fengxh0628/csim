@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Daily production script: download data, update cache, generate positions.
+"""Update data and cache, then generate positions.
 
 Usage:
-  python3 scripts/daily.py --config prod.yml
+  python3 scripts/update_data.py --config prod.yml
 
 Cron (UTC 00:05 daily):
-  5 0 * * * cd /home/xiaohangfeng/repos/cst/csim && python3 scripts/daily.py --config prod.yml >> logs/daily.log 2>&1
+  5 0 * * * cd /home/fengxh/csim && python3 scripts/update_data.py --config prod.yml >> logs/daily.log 2>&1
 
 Steps:
   1. Download latest klines from Binance (incremental)

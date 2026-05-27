@@ -39,7 +39,7 @@ echo "=== csim daily run: ${DATE} $(date -u +%H:%M:%S) UTC ==="
 if [ -z "$SKIP_DOWNLOAD" ]; then
     echo "[1/3] Downloading data and updating cache..."
     for i in $(seq 1 $MAX_RETRIES); do
-        if python3 scripts/daily.py --config "$CONFIG"; then
+        if python3 scripts/update_data.py --config "$CONFIG"; then
             break
         else
             if [ $i -eq $MAX_RETRIES ]; then
