@@ -1,3 +1,5 @@
 **/pnl/
 **/dumps/
 work/pnl/
+**/*.so
+**/__pycache__/
