@@ -3,3 +3,4 @@
 work/pnl/
 **/*.so
 **/__pycache__/
+**/logs/
