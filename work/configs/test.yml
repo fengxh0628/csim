@@ -39,7 +39,7 @@ modules:
 
   # Alpha modules
   - id: test
-    path: /home/fengxh/csim/work/code/test.py
+    path: code/test.py
     handler: alphahandler
 
   # Operations

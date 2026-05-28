@@ -39,7 +39,7 @@ modules:
 
   # Alpha modules
   - id: rskew
-    path: /home/fengxh/csim/work/code/rskew.py
+    path: code/rskew.py
     handler: alphahandler
 
   # Operations

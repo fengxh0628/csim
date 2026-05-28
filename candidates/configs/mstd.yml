@@ -1,12 +1,12 @@
 constants:
   startdate: 20210101
-  enddate: 20231231
+  enddate: 20241231
   booksize: 20
   verbose: true
   warmup: 5      # 5 days warmup before generating signals
   rebalance_times: "00:00"  # UTC, 北京时间 08:00
   datacache: /home/fengxh/csimcache
-  mode: w        # w=write (load data), r=read-only (skip data loading)
+  mode: r        # w=write (load data), r=read-only (skip data loading)
   interval: 5m   # bar interval: 1m, 5m, 15m, 1h
 
 universe:
@@ -26,6 +26,11 @@ modules:
     datapath: /home/fengxh/binance_data
     handler: datahandler
 
+  - id: premiumIndexKlines
+    path: /home/fengxh/csim/modules/dmgrpremiumindexklines.py
+    datapath: /home/fengxh/binance_data
+    handler: datahandler
+
   - id: universe
     path: /home/fengxh/csim/modules/dmgruniverse.py
     handler: datahandler
@@ -39,7 +44,7 @@ modules:
 
   # Alpha modules
   - id: mstd
-    path: /home/fengxh/csim/work/code/mstd.py
+    path: code/mstd.py
     handler: alphahandler
 
   # Operations

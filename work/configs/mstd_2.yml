@@ -6,7 +6,7 @@ constants:
   warmup: 5      # 5 days warmup before generating signals
   rebalance_times: "00:00"  # UTC, 北京时间 08:00
   datacache: /home/fengxh/csimcache
-  mode: w        # w=write (load data), r=read-only (skip data loading)
+  mode: r        # w=write (load data), r=read-only (skip data loading)
   interval: 5m   # bar interval: 1m, 5m, 15m, 1h
 
 universe:
@@ -39,7 +39,7 @@ modules:
 
   # Alpha modules
   - id: mstd
-    path: /home/fengxh/csim/work/code/mstd.py
+    path: code/mstd.py
     handler: alphahandler
 
   # Operations

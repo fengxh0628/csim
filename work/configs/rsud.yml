@@ -39,7 +39,7 @@ modules:
 
   # Alpha modules
   - id: rsud
-    path: /home/fengxh/csim/work/code/rsud.py
+    path: code/rsud.py
     handler: alphahandler
 
   # Operations

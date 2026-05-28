@@ -1,6 +1,6 @@
 constants:
   startdate: 20210101
-  enddate: 20231231
+  enddate: 20241231
   booksize: 20
   verbose: true
   warmup: 5      # 5 days warmup before generating signals
@@ -39,7 +39,7 @@ modules:
 
   # Alpha modules
   - id: skew
-    path: /home/fengxh/csim/work/code/skew.py
+    path: code/skew.py
     handler: alphahandler
 
   # Operations

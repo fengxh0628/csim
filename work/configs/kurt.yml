@@ -39,7 +39,7 @@ modules:
 
   # Alpha modules
   - id: kurt
-    path: /home/fengxh/csim/work/code/kurt.py
+    path: code/kurt.py
     handler: alphahandler
 
   # Operations

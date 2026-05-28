@@ -39,7 +39,7 @@ modules:
 
   # Alpha modules
   - id: skew
-    path: /home/fengxh/csim/work/code/skew.py
+    path: code/skew.py
     handler: alphahandler
 
   # Operations

@@ -10,7 +10,7 @@ constants:
   interval: 5m   # bar interval: 1m, 5m, 15m, 1h
 
 universe:
-  symbols: /home/fengxh/csim/data/universe_top50_lookback12m_liquid.txt
+  symbols: /home/fengxh/csim/data/universe_top50_liquid.txt
   cache_startdate: 20200101
   cache_enddate: 20260731
 
@@ -18,6 +18,11 @@ modules:
   # Data managers
   - id: klines
     path: /home/fengxh/csim/modules/dmgrklines.py
+    datapath: /home/fengxh/binance_data
+    handler: datahandler
+
+  - id: fundingrate
+    path: /home/fengxh/csim/modules/dmgrfundingrate.py
     datapath: /home/fengxh/binance_data
     handler: datahandler
 
@@ -38,23 +43,8 @@ modules:
     handler: statshandler
 
   # Alpha modules
-  - id: corr
-    path: /home/fengxh/csim/candidates/code/corr.py
-    handler: alphahandler
   - id: mstd
-    path: /home/fengxh/csim/candidates/code/mstd.py
-    handler: alphahandler
-  - id: rskew
-    path: /home/fengxh/csim/candidates/code/rskew.py
-    handler: alphahandler
-  - id: rsud
-    path: /home/fengxh/csim/candidates/code/rsud.py
-    handler: alphahandler
-  - id: skew
-    path: /home/fengxh/csim/candidates/code/skew.py
-    handler: alphahandler
-  - id: combosimple
-    path: /home/fengxh/csim/modules/combosimple.py
+    path: code/mstd.py
     handler: alphahandler
 
   # Operations
@@ -85,59 +75,20 @@ modules:
   - id: opriskneut
     path: /home/fengxh/csim/modules/opriskneut.py
     handler: ophandler
-  - id: opgroupneut
-    path: /home/fengxh/csim/modules/opgroupneut.py
-    handler: ophandler
   - id: riskfactors
     path: /home/fengxh/csim/modules/dmgrriskfactors.py
     handler: datahandler
     lookback: 20
 
-  - id: grouping
-    path: /home/fengxh/csim/modules/dmgrgrouping.py
-    handler: datahandler
-    lookback: 90
-
-stats: { moduleId: statssimple, trading_cost: 0.001 }
+stats: { moduleId: statssimple }
 
 portfolio:
-  moduleId: combosimple
-  id: combo2_k5
-  children:
-    - moduleId: corr
-      id: corr_2
-      lookback: 3d
-      data1: close
-      data2: low
-      operations:
-        - { moduleId: opwinsorize }
-        - { moduleId: opemadecay, itvls: 8d }
-        - { moduleId: oppower }
-        - { moduleId: opprofitana, split: 5, startdate: 20210101 }
-    - moduleId: mstd
-      id: mstd
-      direction: -1
-      operations:
-        - { moduleId: opwinsorize }
-        - { moduleId: opriskneut, factor: risk.beta }
-        # - { moduleId: opemadecay, itvls: 2d }
-        - { moduleId: oppower }
-        - { moduleId: opprofitana, split: 5, startdate: 20210101 }
-    - moduleId: rskew
-      id: rskew_2
-      data1: high
-      data2: low
-      lookback: 4d
-      direction: -1
-      operations:
-        - { moduleId: opwinsorize }
-        - { moduleId: opemadecay, itvls: 3d }
-        - { moduleId: oppower }
-        - { moduleId: opprofitana, split: 5, startdate: 20210101 }
+  moduleId: mstd
+  id: mstd
+  direction: -1
   operations:
-    # - { moduleId: oppower }
-    - { moduleId: opgroupneut, field: group.k5 }
+    - { moduleId: opwinsorize }
+    - { moduleId: opriskneut, factor: risk.beta }
+    # - { moduleId: opemadecay, itvls: 2d }
     - { moduleId: oppower }
-    - { moduleId: optopn, long_n: 10, short_n: 10 }
     - { moduleId: opprofitana, split: 5, startdate: 20210101 }
-    - { moduleId: opdump, dumpdir: dumps }
